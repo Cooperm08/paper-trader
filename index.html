@@ -161,6 +161,25 @@
   .callout { background: var(--panel-2); border-left: 3px solid var(--warn); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 13.5px; color: var(--txt); }
   .callout.accent { border-left-color: var(--accent); }
 
+  /* signals */
+  .honesty { background: var(--panel-2); border: 1px solid rgba(245,180,69,.45); border-radius: 10px; padding: 12px 16px; font-size: 13px; color: var(--txt-dim); }
+  .honesty summary { cursor: pointer; color: var(--txt); font-weight: 700; font-size: 13px; }
+  .honesty p { margin: 10px 0 0; line-height: 1.6; }
+  .scanbar { height: 8px; background: var(--bg-2); border-radius: 4px; overflow: hidden; }
+  .scanbar .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .3s; }
+  .sigcard { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+  .sigcard .foot { font-size: 11px; color: var(--txt-faint); margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; line-height: 1.5; }
+  .verdict { font-weight: 800; font-size: 12.5px; padding: 3px 10px; border-radius: 6px; letter-spacing: .3px; }
+  .verdict.SELL { background: var(--down-bg); color: var(--down); }
+  .verdict.TRIM { background: rgba(245,180,69,.14); color: var(--warn); }
+  .verdict.HOLD { background: var(--up-bg); color: var(--up); }
+  .sig-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 12px; }
+  .sig-cell .k { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--txt-faint); }
+  .sig-cell .v2 { font-size: 13.5px; font-weight: 600; }
+  .scorebig { font-size: 26px; font-weight: 800; line-height: 1; }
+  .sig-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .gamble { background: var(--down-bg); border: 1px solid rgba(255,95,87,.5); border-radius: 10px; padding: 12px 16px; font-size: 13px; color: var(--txt); margin-bottom: 12px; font-weight: 600; }
+
   /* modal */
   .modal-bg { position: fixed; inset: 0; background: rgba(4,7,11,.72); display: none; place-items: center; z-index: 100; padding: 20px; }
   .modal-bg.open { display: grid; }
@@ -215,6 +234,7 @@
 
 <nav>
   <button class="tab active" data-tab="dashboard">Dashboard</button>
+  <button class="tab" data-tab="signals">Signals</button>
   <button class="tab" data-tab="trade">Trade</button>
   <button class="tab" data-tab="watchlist">Watchlist</button>
   <button class="tab" data-tab="journal">Journal</button>
@@ -253,6 +273,69 @@
     </div>
   </section>
 
+  <!-- SIGNALS -->
+  <section class="view" id="view-signals">
+    <details class="honesty" style="margin-bottom:16px;" open>
+      <summary>What this engine is — and what it can never be (read once, it matters)</summary>
+      <p>This app does not predict prices — it cannot. It ranks these ~28 stocks against each other from past price data on a free, delayed feed, then applies fixed rules to suggest a default trade and a size. A high score means "strongest recent price trend in this list," never "will go up." Every number here is a mechanical default, not a forecast, not advice, and not a guarantee.</p>
+      <p>This strategy deliberately concentrates and chases volatility because the contest pays only 1st place. Concentration widens your range of outcomes in both directions: it raises your chance of finishing 1st and your chance of finishing last, and the single most likely result is still neither. That trade-off is correct only because 2nd place pays the same as last. Following these rules perfectly can still finish you last — that is an expected outcome, not a bug.</p>
+      <p>Stops are checked once per daily scan and are decision thresholds, not guaranteed exits; an overnight or earnings gap can blow straight through them, so a real loss can be far larger than the stated stop %. The ticker list was picked in 2026 with hindsight about which names already ran, so that choice — not the scoring math — may be the biggest driver of results. Fake money only. Using this logic with real money would be reckless. Educational tool, no licensed advisor involved.</p>
+    </details>
+
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-head">
+        <div><h2>Daily Scan</h2><div class="hint" style="margin:2px 0 0;">Ranks the 28-stock universe by recent price trend, then applies fixed buy/sell rules. Takes ~1–2 min (free data rate limit).</div></div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span class="pill neutral" id="regimeChip">Normal</span>
+          <button class="btn primary" id="scanBtn">Run Daily Scan</button>
+        </div>
+      </div>
+      <div id="scanStatusWrap" style="display:none; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px;"><span class="dim" id="scanStatusText"></span><span class="mono faint" id="scanCount"></span></div>
+        <div class="scanbar"><div class="fill" id="scanFill" style="width:0%"></div></div>
+      </div>
+      <div id="scanMetaLine" class="faint" style="font-size:12.5px; margin-bottom:14px;">No scan yet — run one to get today's calls.</div>
+      <div class="row3">
+        <div class="field" style="margin-bottom:0;">
+          <label>Your leaderboard rank</label>
+          <input type="number" id="rankInput" min="1" step="1" placeholder="e.g. 4" />
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>% behind the leader</label>
+          <input type="number" id="gapInput" min="0" step="0.1" placeholder="e.g. 12" />
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Active posture</label>
+          <div id="regimeNote" style="font-size:12.5px; color:var(--txt-dim); padding-top:9px;"></div>
+        </div>
+      </div>
+      <details style="margin-top:14px;">
+        <summary style="cursor:pointer; font-size:13px; font-weight:600; color:var(--txt-dim);">Daily routine (9 steps)</summary>
+        <ol style="margin:10px 0 0 20px; font-size:13px; color:var(--txt-dim); line-height:1.7;">
+          <li>Open once per trading day, after the market opens (pre-market data reads as zeros).</li>
+          <li>Run the scan and confirm it says complete — a partial scan makes every ranking unreliable.</li>
+          <li>Keep your rank and gap-to-leader current. From Feb 2027 they set the whole risk posture.</li>
+          <li>Holdings first: do every SELL and TRIM before looking at any buys.</li>
+          <li>Then the buy list: enter at the shown price, the shown share count, and note the stop.</li>
+          <li>"Earnings in Xd" tags are coin flips on direction — don't oversize them.</li>
+          <li>Skip any card flagged low-confidence unless nothing else qualifies.</li>
+          <li>Do nothing with HOLDs. Overtrading is how accounts bleed.</li>
+          <li>If it says hold cash, hold cash. Never force a trade.</li>
+        </ol>
+      </details>
+    </div>
+
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-head"><h2>Your holdings — verdicts</h2><span class="faint" style="font-size:12px;">Checked first, before any buys</span></div>
+      <div id="verdictWrap"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Buy candidates</h2><span class="faint" style="font-size:12px;" id="buyHeadNote"></span></div>
+      <div id="buyListWrap"></div>
+    </div>
+  </section>
+
   <!-- TRADE -->
   <section class="view" id="view-trade">
     <div class="grid" style="grid-template-columns: minmax(0,1fr); max-width:560px; margin:0 auto;">
@@ -275,11 +358,11 @@
         <div class="quotecard hidden" id="quoteCard"></div>
 
         <div class="field" id="convictionField">
-          <label>Conviction (drives suggested size)</label>
+          <label>Position size preset (drives suggested size)</label>
           <div class="seg" id="convSeg">
-            <button data-conv="low">Low</button>
+            <button data-conv="low">Small</button>
             <button data-conv="med" class="active">Medium</button>
-            <button data-conv="high">High</button>
+            <button data-conv="high">Large</button>
           </div>
         </div>
 
@@ -455,7 +538,9 @@ const DEFAULT_STATE = () => ({
   trades: [],                        // { id, ts, symbol, side, shares, priceCents, reason }
   watchlist: [],                     // [ "NVDA", ... ]
   quotes: {},                        // symbol -> { c, d, dp, h, l, pc, t }
-  meta: {},                          // symbol -> { name, high52, low52, beta, nextEarnings }
+  meta: {},                          // symbol -> { name, high52, low52, beta, nextEarnings, mcap }
+  scan: null,                        // { ts, unitMult, rows: [raw per-symbol fields, normalized to percent] }
+  contest: { rank: "", gapPct: "" }, // user-entered leaderboard standing (drives endgame posture)
 });
 
 let state = load();
@@ -475,7 +560,10 @@ function load() {
     (merged.positions || []).forEach(p => {
       if (p.costCents == null && p.avgCents != null) p.costCents = Math.round(p.shares * p.avgCents);
       delete p.avgCents;
+      // High-water mark (price in cents) for the trailing stop; init at avg cost for older positions.
+      if (p.peakCents == null) p.peakCents = p.shares > 0 ? Math.round(p.costCents / p.shares) : 0;
     });
+    if (!merged.contest) merged.contest = { rank: "", gapPct: "" };
     return merged;
   } catch (e) { return DEFAULT_STATE(); }
 }
@@ -618,6 +706,7 @@ async function refreshAll() {
     if (e && e.message === "auth") toast("API key rejected — check it in Settings", "err");
   });
   btn.textContent = "↻ Refresh"; btn.disabled = false;
+  ratchetPeaks();
   save(); setUpdated(); renderAll();
   if (ok) toast(`Updated ${ok} quote${ok > 1 ? "s" : ""}` + (fail ? ` · ${fail} failed` : ""), "ok");
   else if (fail) toast(`Could not fetch quotes — check symbols / key`, "err");
@@ -680,6 +769,7 @@ function renderAll() {
   renderDashboard();
   renderWatchlist();
   renderJournal();
+  renderSignals();
   document.getElementById("apiBanner").classList.toggle("hidden", !!state.apiKey);
 }
 function renderHeader() {
@@ -833,8 +923,9 @@ function executeTrade(side, symbol, shares, priceCents, reason) {
     if (pos) {
       pos.shares += shares;
       pos.costCents += cost;
+      pos.peakCents = Math.max(pos.peakCents || 0, priceCents);
     } else {
-      state.positions.push({ id: uid(), symbol, shares, costCents: cost, openedAt: Date.now() });
+      state.positions.push({ id: uid(), symbol, shares, costCents: cost, peakCents: priceCents, openedAt: Date.now() });
     }
   } else {
     const pos = state.positions.find(p => p.symbol === symbol);
@@ -865,7 +956,8 @@ function suggestSize() {
   const capped = Math.min(targetCents, state.cashCents);
   const shares = Math.floor(capped / priceCents);
   summary.style.display = "block";
-  summary.innerHTML = `Suggested at <strong>${currentConv}</strong> conviction: ~<strong>${shares}</strong> shares · ${fmtMoney(shares * priceCents)} (${(tv ? (shares * priceCents / tv * 100) : 0).toFixed(1)}% of portfolio). <span class="dim">Cap any single entry ~25–30%.</span> <a href="#" id="applySuggest">Apply</a>`;
+  const sizeLbl = { low: "small", med: "medium", high: "large" }[currentConv];
+  summary.innerHTML = `Suggested <strong>${sizeLbl}</strong> size: ~<strong>${shares}</strong> shares · ${fmtMoney(shares * priceCents)} (${(tv ? (shares * priceCents / tv * 100) : 0).toFixed(1)}% of portfolio). <span class="dim">Cap any single entry ~25–30%.</span> <a href="#" id="applySuggest">Apply</a>`;
   const a = document.getElementById("applySuggest");
   if (a) a.onclick = (e) => { e.preventDefault(); document.getElementById("tShares").value = shares; syncFromShares(); };
 }
@@ -1000,6 +1092,527 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 
+// ---------- Signals engine (fixed rules on past-price data — ranks, never predicts) ----------
+const UNIVERSE = ["NVDA","AVGO","AMD","MU","ARM","SMCI","TSM","QCOM","MRVL","AAPL","MSFT","GOOGL","AMZN","META","TSLA","NFLX","PLTR","CRM","ORCL","NOW","UBER","COIN","MSTR","SHOP","CVNA","LLY","COST","QQQ"];
+const E_SOON_CAL = 7;   // ~5 trading days: earnings-soon tag + new-buy size cap
+const E_TRIM_CAL = 4;   // ~3 trading days: pre-earnings de-risk trim
+const ENDGAME_START = "2027-02-01";
+const CARD_FOOT = "Default from fixed rules — not a prediction, not advice. Score is relative to the names scanned this run only.";
+const STOP_FOOT = "Stop = decision threshold checked once per scan, not a guaranteed exit; a gap can blow through it. Position size, not the stop, limits gap risk.";
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// --- pure scoring functions ---
+function detectUnitMult(rows) {
+  const vals = rows.map(r => r.r52).filter(v => v != null).map(Math.abs).sort((a, b) => a - b);
+  if (!vals.length) return 1;
+  const v90 = vals[Math.min(vals.length - 1, Math.floor(0.9 * (vals.length - 1)))];
+  return v90 < 5 ? 100 : 1; // fraction feed -> convert everything to percent
+}
+function crossStats(rows) {
+  const wins = {};
+  for (const w of ["r13", "r26", "r52", "ytd"]) {
+    const vals = rows.map(r => r[w]).filter(v => v != null);
+    if (vals.length >= 8) {
+      const mu = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mu) * (b - mu), 0) / vals.length) || 1;
+      wins[w] = { mu, sd };
+    }
+  }
+  return wins;
+}
+function zScore01(v, s) {
+  const z = Math.max(-2.5, Math.min(2.5, (v - s.mu) / s.sd));
+  return (z + 2.5) / 5 * 100;
+}
+function scoreRow(r, wins, regime) {
+  const flags = [];
+  const W = { r26: 0.40, r13: 0.35, r52: 0.25 };
+  let momNum = 0, momDen = 0, used = 0;
+  const parts = {};
+  for (const w of ["r26", "r13", "r52"]) {
+    if (r[w] != null && wins[w]) {
+      const s = zScore01(r[w], wins[w]);
+      parts[w] = s; momNum += W[w] * s; momDen += W[w]; used++;
+    }
+  }
+  let mom = null;
+  if (momDen > 0) { mom = momNum / momDen; if (used === 1) flags.push("single momentum window — low confidence"); }
+  else if (r.ytd != null && wins.ytd) { mom = zScore01(r.ytd, wins.ytd); flags.push("YTD-only — low confidence"); }
+  let rangePos = null;
+  if (r.high52 != null && r.low52 != null && r.high52 > r.low52 && r.c != null) {
+    rangePos = Math.max(0, Math.min(1, (r.c - r.low52) / (r.high52 - r.low52))) * 100;
+  }
+  let P = 0;
+  if (regime.key !== "FAR_BEHIND" && r.r5 != null) { if (r.r5 >= 25) P = 15; else if (r.r5 >= 15) P = 10; }
+  let score = null;
+  if (mom != null && rangePos != null) score = 0.70 * mom + 0.30 * rangePos - P;
+  else if (mom != null) { score = mom - P; flags.push("no 52wk range"); }
+  else if (rangePos != null) { score = rangePos - P; flags.push("range-only — low confidence"); }
+  else return null; // nothing computable: exclude, don't guess
+  if (r.beta == null) flags.push("beta missing");
+  return { mom, parts, rangePos, penalty: P, score: Math.max(0, Math.min(100, score)), flags };
+}
+function volShares(v) { if (v == null) return null; return v < 10000 ? v * 1e6 : v; } // Finnhub may report volume in millions
+function eligibleBuy(r, sc) {
+  const reasons = [];
+  const uptrend = r.r26 != null ? r.r26 > 0 : (r.r13 != null ? r.r13 > 0 : false);
+  if (!uptrend) reasons.push("not in an uptrend");
+  if (sc.rangePos == null || sc.rangePos < 40) reasons.push("lower half of 52wk range");
+  const v3 = volShares(r.vol3m), v10 = volShares(r.vol10);
+  const liquid = v3 != null ? v3 >= 1e6 : (v10 != null ? v10 >= 5e5 : (r.mcap != null ? r.mcap >= 2000 : true));
+  if (!liquid) reasons.push("fails liquidity gate");
+  if (r.c == null || r.c < 5) reasons.push("price under $5");
+  return { ok: reasons.length === 0, reasons };
+}
+function stopPctFor(beta) { return beta != null ? Math.max(0.18, Math.min(0.30, 0.18 * Math.max(beta, 1))) : 0.20; }
+function trailPctFor(beta, regime) {
+  let t = beta != null ? Math.max(0.12, Math.min(0.22, 0.12 * Math.max(beta, 1))) : 0.15;
+  if (regime.key === "LEADING") t = Math.min(t, 0.09);
+  return t;
+}
+function currentRegime(nowArg) {
+  const now = nowArg || new Date();
+  if (now < new Date(ENDGAME_START + "T00:00:00")) {
+    return { key: "NORMAL", cap: 0.35, label: "Normal", note: "Endgame postures unlock Feb 1, 2027. Until then: 4–6 concentrated names, ~10% dry powder." };
+  }
+  const rank = parseInt(state.contest.rank, 10);
+  const gap = parseFloat(state.contest.gapPct);
+  const hasRank = !isNaN(rank) && rank >= 1;
+  const hasGap = !isNaN(gap) && gap >= 0;
+  if (!hasRank && !hasGap) return { key: "CLOSE_BEHIND", cap: 0.35, label: "Endgame — standings unknown", note: "Enter your rank and gap-to-leader; a wrong posture here is costly." };
+  const end = new Date(state.endDate + "T23:59:59");
+  const weeksLeft = Math.max(0, (end - now) / (7 * 86400000));
+  if ((hasRank && rank === 1) || (hasGap && gap <= 2)) return { key: "LEADING", cap: 0.25, label: "Leading — protect", note: "Variance is now the enemy: tight stops, no high-beta, no earnings holds." };
+  if ((hasGap && gap > 25) || (hasRank && rank > 3 && weeksLeft < 4)) return { key: "FAR_BEHIND", cap: 0.70, label: "Far behind — max variance", note: "Concentrate 60–70% into the top 1–2 names, hold through earnings, stops suspended on the big bet." };
+  return { key: "CLOSE_BEHIND", cap: 0.35, label: "Close behind — balanced press", note: "Stay concentrated in your strongest 1–2 names; normal stops and caps." };
+}
+function daysToEarnings(sym) {
+  const me = state.meta[sym];
+  if (!me || !me.nextEarnings) return null;
+  return daysUntil(me.nextEarnings);
+}
+
+// --- scored view of the last scan (recomputed under the CURRENT regime) ---
+function scoredScan(regime) {
+  if (!state.scan || !state.scan.rows || !state.scan.rows.length) return null;
+  const rows = state.scan.rows;
+  const wins = crossStats(rows);
+  const heldNow = new Set(state.positions.map(p => p.symbol));
+  const scored = rows.map(r => ({ ...r, heldNow: heldNow.has(r.sym), sc: scoreRow(r, wins, regime) }));
+  const valid = scored.filter(r => r.sc);
+  const complete = valid.length >= 12;
+  let buys = [];
+  if (complete) {
+    buys = scored.filter(r => r.sc && !r.heldNow)
+      .map(r => ({ ...r, elig: eligibleBuy(r, r.sc) }))
+      .filter(r => r.elig.ok && r.sc.score >= 60)
+      .sort((a, b) => b.sc.score - a.sc.score)
+      .slice(0, regime.key === "FAR_BEHIND" ? 2 : 6);
+  }
+  return { scored, valid, complete, buys, ts: state.scan.ts };
+}
+function buyCardData(row, regime, idx) {
+  const sc = row.sc;
+  const priceCents = dollarsToCents(row.c);
+  const de = daysToEarnings(row.sym);
+  const lowConf = sc.flags.some(f => /low confidence/i.test(f));
+  let w;
+  if (regime.key === "FAR_BEHIND") w = idx === 0 ? 0.40 : 0.30;
+  else {
+    w = Math.max(0.10, Math.min(regime.cap, 0.10 + 0.25 * (sc.score - 60) / 40));
+    if (row.beta != null && row.beta > 1.8) w = Math.min(w, 0.25);
+    if (lowConf) w *= 0.5;
+    if (de != null && de >= 0 && de <= E_SOON_CAL) w = Math.min(w, 0.12);
+  }
+  const V = totalValueCents();
+  let shares = priceCents > 0 ? Math.floor(w * V / priceCents) : 0;
+  const afford = priceCents > 0 ? Math.floor(state.cashCents / priceCents) : 0;
+  const cashLimited = shares > afford;
+  if (cashLimited) shares = afford;
+  const sPct = stopPctFor(row.beta);
+  const stop = Math.round(priceCents * (1 - sPct));
+  const tier = (sc.score >= 75 && sc.flags.length === 0) ? "strongest recent trend in this scan" : "moderate recent trend";
+  return { priceCents, de, w, shares, cashLimited, sPct, stop, tier, lowConf };
+}
+
+// --- SELL / TRIM / HOLD verdicts (holdings first, always) ---
+function verdictFor(pos, regime, view) {
+  const row = view ? view.scored.find(r => r.sym === pos.symbol) : null;
+  const q = state.quotes[pos.symbol];
+  const priceCents = q ? dollarsToCents(q.c) : null;
+  const avg = posAvgCents(pos);
+  const out = { verdict: "HOLD", reasons: [], chips: [], stop: null, action: null };
+  if (!row || priceCents == null || priceCents <= 0) {
+    out.chips.push("no scan data for this name — run a scan");
+    return out;
+  }
+  const V = totalValueCents();
+  const mv = positionMarketCents(pos);
+  const wt = V ? mv / V : 0;
+  const sPct = stopPctFor(row.beta);
+  const tPct = trailPctFor(row.beta, regime);
+  const hardStop = Math.round(avg * (1 - sPct));
+  const peak = Math.max(pos.peakCents || 0, avg);
+  const trailActive = avg > 0 && (peak / avg - 1) >= 0.25;
+  const trailStop = trailActive ? Math.round(peak * (1 - tPct)) : 0;
+  const eff = Math.max(hardStop, trailStop);
+  out.stop = { eff, hardStop, trailStop, trailActive, sPct, tPct };
+  const de = daysToEarnings(pos.symbol);
+  const sc = row.sc;
+  const rp = sc ? sc.rangePos : null;
+
+  // FAR-BEHIND: the 1-2 biggest positions ARE the variance play — their stop is deliberately off.
+  let stopSuspended = false;
+  if (regime.key === "FAR_BEHIND") {
+    const top2 = state.positions.map(p => ({ id: p.id, mv: positionMarketCents(p) }))
+      .sort((a, b) => b.mv - a.mv).slice(0, 2).map(x => x.id);
+    stopSuspended = top2.includes(pos.id);
+    if (stopSuspended) out.chips.push("stop suspended — deliberate far-behind variance play");
+  }
+
+  if (!row.metricOk) {
+    out.chips.push("STALE DATA — metrics unavailable this scan; only the hard loss limit is live");
+    if (!stopSuspended && priceCents <= hardStop) {
+      out.verdict = "SELL"; out.reasons.push(`price ${fmtMoney(priceCents)} at/below hard loss limit ${fmtMoney(hardStop)}`);
+    }
+    return out;
+  }
+  if (!stopSuspended && priceCents <= eff) {
+    out.verdict = "SELL"; out.reasons.push(`loss limit hit: price ${fmtMoney(priceCents)} ≤ ${fmtMoney(eff)}${trailActive && trailStop >= hardStop ? " (trailing)" : ""}`);
+    return out;
+  }
+  if (pos.lastEarningsSeen) {
+    const d = daysUntil(pos.lastEarningsSeen);
+    const thr = regime.key === "LEADING" ? -5 : -8;
+    if (d != null && d <= 0 && d >= -3 && row.dp != null && row.dp <= thr) {
+      out.verdict = "SELL"; out.reasons.push(`post-earnings gap ${fmtPct(row.dp, true)} — the catalyst resolved against you`);
+      return out;
+    }
+  }
+  if (rp != null && rp < 25) {
+    out.verdict = "SELL"; out.reasons.push(`fell to the bottom quartile of its 52-week range (${rp.toFixed(0)}%) — the uptrend that justified owning it is gone`);
+    return out;
+  }
+  if (row.r13 != null ? (row.r13 < 0 && rp != null && rp < 40) : (rp != null && rp < 40)) {
+    out.verdict = "SELL"; out.reasons.push("uptrend broken: 13-week return negative and lower half of the 52-week range");
+    return out;
+  }
+  if (sc && sc.score < 40) {
+    out.verdict = "SELL"; out.reasons.push(`relative strength collapsed: score ${sc.score.toFixed(0)} — no longer strong vs the scanned list`);
+    return out;
+  }
+  if (regime.key === "LEADING" && ((row.beta != null && row.beta > 1.5) || (de != null && de >= 0 && de <= E_SOON_CAL))) {
+    out.verdict = "SELL"; out.reasons.push("protect-the-lead: high volatility or earnings imminent — rotate to cash / low-beta");
+    return out;
+  }
+  if (wt > regime.cap + 0.005 && priceCents > 0) {
+    const sellShares = Math.ceil((mv - regime.cap * V) / priceCents);
+    if (sellShares > 0 && sellShares < pos.shares) {
+      out.verdict = "TRIM"; out.action = { shares: sellShares };
+      out.reasons.push(`position is ${(wt * 100).toFixed(0)}% of the portfolio — trim back to the ${(regime.cap * 100).toFixed(0)}% cap`);
+      return out;
+    }
+  }
+  if (regime.key !== "FAR_BEHIND" && row.r5 != null && row.r5 >= 25 && rp != null && rp >= 95) {
+    const sellShares = Math.floor(pos.shares * 0.30);
+    if (sellShares > 0) {
+      out.verdict = "TRIM"; out.action = { shares: sellShares };
+      out.reasons.push(`parabolic 5-day move (+${row.r5.toFixed(0)}%) at the top of its range — bank 30% into strength, let the rest run`);
+      return out;
+    }
+  }
+  if (regime.key !== "FAR_BEHIND" && de != null && de >= 0 && de <= E_TRIM_CAL && wt > 0.15 && priceCents > 0) {
+    const keepCents = regime.key === "LEADING" ? mv * 0.5 : 0.12 * V;
+    const sellShares = Math.ceil((mv - keepCents) / priceCents);
+    if (sellShares > 0 && sellShares < pos.shares) {
+      out.verdict = "TRIM"; out.action = { shares: sellShares };
+      out.reasons.push(`earnings in ~${de}d with a ${(wt * 100).toFixed(0)}% position — cut the coin-flip exposure before the print`);
+      return out;
+    }
+  }
+  if (sc) {
+    if (row.r26 != null && row.r26 <= 0) out.chips.push("26-week trend no longer positive — watch closely");
+    if (sc.score < 50) out.chips.push(`score ${sc.score.toFixed(0)} — weakening vs the list`);
+  }
+  if (de != null && de >= 0 && de <= E_SOON_CAL) {
+    out.chips.push(regime.key === "FAR_BEHIND"
+      ? `earnings in ~${de}d — far behind: hold through the print, the gap is the variance you need`
+      : `earnings in ~${de}d — a coin flip on direction, not an edge`);
+  }
+  return out;
+}
+
+// --- scan orchestration (serialized ~1.1s/call for the free 60/min limit) ---
+let scanRun = { running: false, done: 0, total: 0, current: "" };
+async function apiGetScan(path) {
+  try { return await apiGet(path); }
+  catch (e) {
+    if (e.message === "rate") { setScanStatus("Rate-limited — waiting 15s…"); await sleep(15000); return apiGet(path); }
+    throw e;
+  }
+}
+function setScanStatus(txt) {
+  const el = document.getElementById("scanStatusText");
+  if (el) el.textContent = txt;
+}
+async function runScan() {
+  if (!state.apiKey) { toast("Add your Finnhub API key in Settings first", "err"); openSettings(); return; }
+  if (scanRun.running) return;
+  const held = state.positions.map(p => p.symbol);
+  const syms = [...new Set([...held, ...UNIVERSE])]; // holdings FIRST so a truncated scan can never skip a stop check
+  scanRun = { running: true, done: 0, total: syms.length, current: "" };
+  renderScanControls();
+  const rows = [];
+  try {
+    for (const sym of syms) {
+      scanRun.current = sym; renderScanControls();
+      let q = null, m = null;
+      try {
+        q = await fetchQuote(sym);
+      } catch (e) {
+        if (e.message === "auth") throw e;
+        if (e.message === "rate") { // wait out the limit and retry once
+          setScanStatus("Rate-limited — waiting 15s…");
+          await sleep(15000);
+          try { q = await fetchQuote(sym); } catch (e2) { if (e2.message === "auth") throw e2; }
+        }
+      }
+      await sleep(1100);
+      try {
+        const mr = await apiGetScan(`/stock/metric?symbol=${encodeURIComponent(sym)}&metric=all`);
+        m = (mr && mr.metric) ? mr.metric : null;
+      } catch (e) { if (e.message === "auth") throw e; }
+      await sleep(1100);
+      if (q) state.quotes[sym] = q;
+      rows.push({
+        sym, metricOk: !!m,
+        c: q ? q.c : null, dp: q ? q.dp : null,
+        r5: m ? num(m["5DayPriceReturnDaily"]) : null,
+        r13: m ? num(m["13WeekPriceReturnDaily"]) : null,
+        r26: m ? num(m["26WeekPriceReturnDaily"]) : null,
+        r52: m ? num(m["52WeekPriceReturnDaily"]) : null,
+        ytd: m ? num(m["yearToDatePriceReturnDaily"]) : null,
+        high52: m ? num(m["52WeekHigh"]) : null,
+        low52: m ? num(m["52WeekLow"]) : null,
+        beta: m ? num(m["beta"]) : null,
+        vol3m: m ? num(m["3MonthAverageTradingVolume"]) : null,
+        vol10: m ? num(m["10DayAverageTradingVolume"]) : null,
+        mcap: (state.meta[sym] && state.meta[sym].mcap) || null,
+      });
+      scanRun.done++; renderScanControls();
+    }
+  } catch (e) {
+    scanRun.running = false;
+    renderScanControls();
+    toast(e.message === "auth" ? "API key rejected — scan aborted" : "Scan failed: " + e.message, "err");
+    return;
+  }
+  // Normalize return units to percent once, before storing.
+  const unitMult = detectUnitMult(rows);
+  if (unitMult === 100) rows.forEach(r => { for (const k of ["r5", "r13", "r26", "r52", "ytd"]) if (r[k] != null) r[k] *= 100; });
+  state.scan = { ts: Date.now(), unitMult, rows };
+  // Earnings + profile only for holdings + surfaced candidates (rate-budget discipline).
+  const view = scoredScan(currentRegime());
+  const metaSyms = [...new Set([...held, ...(view ? view.buys.map(b => b.sym) : [])])];
+  for (const sym of metaSyms) {
+    scanRun.current = sym + " (earnings)"; renderScanControls();
+    try {
+      if (!state.meta[sym] || !state.meta[sym].name) {
+        const p = await apiGetScan(`/stock/profile2?symbol=${encodeURIComponent(sym)}`);
+        state.meta[sym] = Object.assign({}, state.meta[sym], { name: (p && p.name) || "", mcap: p ? num(p.marketCapitalization) : null });
+        await sleep(1100);
+      }
+      const e = await apiGetScan(`/calendar/earnings?symbol=${encodeURIComponent(sym)}&from=${todayISO()}&to=${addDaysISO(120)}`);
+      let next = null;
+      if (e && Array.isArray(e.earningsCalendar) && e.earningsCalendar.length) {
+        const ds = e.earningsCalendar.map(x => x.date).filter(Boolean).sort();
+        if (ds.length) next = ds[0];
+      }
+      state.meta[sym] = Object.assign({}, state.meta[sym], { nextEarnings: next });
+      await sleep(1100);
+    } catch (err) { /* earnings unknown — verdicts treat as no-date */ }
+  }
+  ratchetPeaks();
+  scanRun.running = false;
+  save();
+  renderAll();
+  const v = scoredScan(currentRegime());
+  toast(v && v.complete ? `Scan complete — ranked ${v.valid.length} of ${rows.length}` : "Scan incomplete — rankings unreliable, rerun", v && v.complete ? "ok" : "err");
+}
+function ratchetPeaks() {
+  state.positions.forEach(p => {
+    const q = state.quotes[p.symbol];
+    if (q && q.c) p.peakCents = Math.max(p.peakCents || 0, dollarsToCents(q.c));
+    const me = state.meta[p.symbol];
+    if (me && me.nextEarnings) p.lastEarningsSeen = me.nextEarnings;
+  });
+}
+
+// --- signals rendering ---
+function renderScanControls() {
+  const regime = currentRegime();
+  const chip = document.getElementById("regimeChip");
+  if (chip) {
+    chip.textContent = regime.label;
+    chip.className = "pill " + (regime.key === "LEADING" ? "up" : regime.key === "FAR_BEHIND" ? "down" : regime.key === "NORMAL" ? "neutral" : "warn");
+  }
+  const note = document.getElementById("regimeNote");
+  if (note) note.textContent = regime.note;
+  const wrap = document.getElementById("scanStatusWrap");
+  const btn = document.getElementById("scanBtn");
+  if (wrap) wrap.style.display = scanRun.running ? "block" : "none";
+  if (btn) { btn.disabled = scanRun.running; btn.textContent = scanRun.running ? "Scanning…" : "Run Daily Scan"; }
+  if (scanRun.running) {
+    setScanStatus("Fetching " + scanRun.current + "…");
+    const cnt = document.getElementById("scanCount");
+    if (cnt) cnt.textContent = scanRun.done + "/" + scanRun.total;
+    const fill = document.getElementById("scanFill");
+    if (fill) fill.style.width = (scanRun.total ? (scanRun.done / scanRun.total) * 100 : 0).toFixed(0) + "%";
+  }
+  const metaLine = document.getElementById("scanMetaLine");
+  if (metaLine) {
+    if (!state.scan) metaLine.textContent = "No scan yet — run one to get today's calls.";
+    else {
+      const age = Date.now() - state.scan.ts;
+      const view = scoredScan(regime);
+      const when = new Date(state.scan.ts);
+      let txt = `Last scan ${pad(when.getHours())}:${pad(when.getMinutes())} · ranked ${view ? view.valid.length : 0} of ${state.scan.rows.length}`;
+      if (view && !view.complete) txt += " · INCOMPLETE — rankings unreliable, rerun";
+      else if (age > 20 * 3600000) txt += " · stale (>20h) — rerun before acting";
+      metaLine.textContent = txt;
+    }
+  }
+}
+function renderSignals() {
+  renderScanControls();
+  const regime = currentRegime();
+  const view = scoredScan(regime);
+
+  // holdings verdicts
+  const vw = document.getElementById("verdictWrap");
+  if (vw) {
+    if (!state.positions.length) {
+      vw.innerHTML = `<div class="empty">No positions yet — verdicts appear here once you own something.</div>`;
+    } else {
+      const items = state.positions.map(pos => ({ pos, v: verdictFor(pos, regime, view) }));
+      const order = { SELL: 0, TRIM: 1, HOLD: 2 };
+      items.sort((a, b) => order[a.v.verdict] - order[b.v.verdict]);
+      vw.innerHTML = items.map(({ pos, v }) => {
+        const q = state.quotes[pos.symbol];
+        const priceCents = q ? dollarsToCents(q.c) : posAvgCents(pos);
+        const mv = positionMarketCents(pos);
+        const cost = positionCostCents(pos);
+        const plPct = cost ? ((mv - cost) / cost) * 100 : 0;
+        const wt = totalValueCents() ? (mv / totalValueCents()) * 100 : 0;
+        const name = (state.meta[pos.symbol] && state.meta[pos.symbol].name) || "";
+        const stopHtml = v.stop ? `
+          <div class="sig-cell"><div class="k">Stop (${v.stop.trailActive ? "trailing live" : "hard"})</div><div class="v2 mono">${fmtMoney(v.stop.eff)}</div></div>
+          <div class="sig-cell"><div class="k">Distance to stop</div><div class="v2 mono">${priceCents > 0 ? (((priceCents - v.stop.eff) / priceCents) * 100).toFixed(1) + "%" : "—"}</div></div>` : "";
+        const actBtn = (v.verdict === "SELL" || v.verdict === "TRIM")
+          ? `<button class="btn sell sm" data-verdict-exec="${esc(pos.symbol)}">Execute ${v.verdict === "TRIM" ? "trim" : "sell"}</button>` : "";
+        return `<div class="sigcard">
+          <div class="sig-head">
+            <div><span class="sym" style="font-size:15px;">${esc(pos.symbol)}</span> ${name ? `<span class="faint" style="font-size:12px;">${esc(name.slice(0, 28))}</span>` : ""}</div>
+            <div style="display:flex; gap:8px; align-items:center;"><span class="verdict ${v.verdict}">${v.verdict}${v.action ? ` ${fmtShares(v.action.shares)} sh` : v.verdict === "SELL" ? " ALL" : ""}</span>${actBtn}</div>
+          </div>
+          ${v.reasons.length ? `<div style="font-size:13px; margin-top:8px; color:var(--txt);">${v.reasons.map(esc).join(" · ")}</div>` : ""}
+          <div class="sig-grid">
+            <div class="sig-cell"><div class="k">Price</div><div class="v2 mono">${fmtMoney(priceCents)}</div></div>
+            <div class="sig-cell"><div class="k">Avg cost</div><div class="v2 mono">${fmtMoney(posAvgCents(pos))}</div></div>
+            <div class="sig-cell"><div class="k">Unrealized</div><div class="v2 mono ${cls(plPct)}">${fmtPct(plPct, true)}</div></div>
+            <div class="sig-cell"><div class="k">Weight</div><div class="v2 mono">${wt.toFixed(1)}%</div></div>
+            ${stopHtml}
+          </div>
+          ${v.chips.length ? `<div class="signals" style="margin-top:10px;">${v.chips.map(c => `<span class="pill warn">${esc(c)}</span>`).join(" ")}</div>` : ""}
+          <div class="foot">${CARD_FOOT}${v.stop ? " " + STOP_FOOT : ""}</div>
+        </div>`;
+      }).join("");
+    }
+  }
+
+  // buy list
+  const bw = document.getElementById("buyListWrap");
+  const bh = document.getElementById("buyHeadNote");
+  if (bw) {
+    if (!view) {
+      if (bh) bh.textContent = "";
+      bw.innerHTML = `<div class="empty">Run a scan to rank the universe and get today's candidates.</div>`;
+    } else if (!view.complete) {
+      if (bh) bh.textContent = "";
+      bw.innerHTML = `<div class="empty" style="color:var(--warn);">Scan incomplete — only ${view.valid.length} of ${view.scored.length} names scored. Rankings are unreliable on a partial cross-section. Rerun the scan.</div>`;
+    } else if (!view.buys.length) {
+      if (bh) bh.textContent = `ranked ${view.valid.length} of ${view.scored.length} this run`;
+      bw.innerHTML = `<div class="empty">No qualifying momentum buys — hold cash. Do not force a trade.</div>`;
+    } else {
+      if (bh) bh.textContent = `ranked ${view.valid.length} of ${view.scored.length} this run`;
+      const gamble = regime.key === "FAR_BEHIND"
+        ? `<div class="gamble">This is a deliberate gamble that most likely still loses. It is correct only because this contest pays winner-take-all, and it would be reckless with real money.</div>` : "";
+      bw.innerHTML = gamble + view.buys.map((row, idx) => {
+        const d = buyCardData(row, regime, idx);
+        const sc = row.sc;
+        const name = (state.meta[row.sym] && state.meta[row.sym].name) || "";
+        const rank = view.valid.slice().sort((a, b) => b.sc.score - a.sc.score).findIndex(r => r.sym === row.sym) + 1;
+        const momHtml = ["r13", "r26", "r52"].map(k => {
+          const lbl = k === "r13" ? "13wk" : k === "r26" ? "26wk" : "52wk";
+          return row[k] != null ? `${lbl} ${fmtPct(row[k], true)}${sc.parts[k] != null ? ` <span class="faint">(${sc.parts[k].toFixed(0)})</span>` : ""}` : `${lbl} —`;
+        }).join(" · ");
+        const belowHigh = row.high52 != null && row.c != null && row.high52 > 0 ? ((1 - row.c / row.high52) * 100) : null;
+        const earnTag = d.de != null && d.de >= 0 && d.de <= E_SOON_CAL
+          ? `<span class="pill warn">⚡ Earnings in ~${d.de}d — holding through the report is a coin flip on direction, not an edge</span>` : "";
+        const flagTags = sc.flags.map(f => `<span class="pill neutral">${esc(f)}</span>`).join(" ");
+        return `<div class="sigcard">
+          <div class="sig-head">
+            <div>
+              <span class="sym" style="font-size:16px;">${esc(row.sym)}</span> ${name ? `<span class="faint" style="font-size:12px;">${esc(name.slice(0, 28))}</span>` : ""}
+              <div class="faint" style="font-size:12px; margin-top:2px;">#${rank} of ${view.valid.length} scored this run · ${esc(d.tier)}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="scorebig mono">${sc.score.toFixed(0)}</div>
+              <div class="k faint" style="font-size:10px; text-transform:uppercase; letter-spacing:.5px;">score</div>
+            </div>
+          </div>
+          <div class="sig-grid">
+            <div class="sig-cell"><div class="k">Entry (limit)</div><div class="v2 mono">$${row.c.toFixed(2)}</div></div>
+            <div class="sig-cell"><div class="k">Suggested size</div><div class="v2 mono">${d.shares.toLocaleString()} sh · ${fmtMoneyShort(d.shares * d.priceCents)}</div></div>
+            <div class="sig-cell"><div class="k">% of portfolio</div><div class="v2 mono">${totalValueCents() ? ((d.shares * d.priceCents / totalValueCents()) * 100).toFixed(1) : "0"}%</div></div>
+            <div class="sig-cell"><div class="k">Stop (−${(d.sPct * 100).toFixed(0)}%)</div><div class="v2 mono">${fmtMoney(d.stop)}</div></div>
+            <div class="sig-cell"><div class="k">52wk range pos</div><div class="v2 mono">${sc.rangePos != null ? sc.rangePos.toFixed(0) + "%" : "—"}${belowHigh != null ? ` <span class="faint">(${belowHigh.toFixed(0)}% off high)</span>` : ""}</div></div>
+            <div class="sig-cell"><div class="k">Momentum</div><div class="v2" style="font-size:12px;">${momHtml}</div></div>
+          </div>
+          <div class="signals" style="margin-top:10px;">${earnTag} ${flagTags}${d.cashLimited ? ` <span class="pill neutral">size capped by available cash</span>` : ""}</div>
+          <div style="margin-top:12px;"><button class="btn buy sm" data-prep-buy="${esc(row.sym)}">Prep this trade</button></div>
+          <div class="foot">${CARD_FOOT} ${STOP_FOOT}</div>
+        </div>`;
+      }).join("");
+    }
+  }
+}
+function prepBuyFromSignal(sym) {
+  const regime = currentRegime();
+  const view = scoredScan(regime);
+  if (!view) return;
+  const idx = view.buys.findIndex(b => b.sym === sym);
+  if (idx < 0) return;
+  const row = view.buys[idx];
+  const d = buyCardData(row, regime, idx);
+  setSide("BUY");
+  document.getElementById("tSymbol").value = sym;
+  document.getElementById("tPrice").value = row.c.toFixed(2);
+  document.getElementById("tShares").value = d.shares;
+  syncFromShares();
+  document.getElementById("tReason").value = `Signals scan: score ${row.sc.score.toFixed(0)}, stop ${fmtMoney(d.stop)} (−${(d.sPct * 100).toFixed(0)}%)`;
+  showTab("trade");
+}
+function execVerdict(sym) {
+  const pos = state.positions.find(p => p.symbol === sym);
+  if (!pos) return;
+  const v = verdictFor(pos, currentRegime(), scoredScan(currentRegime()));
+  openSell(sym);
+  if (v.verdict === "TRIM" && v.action) document.getElementById("sellShares").value = v.action.shares;
+  document.getElementById("sellReason").value = v.reasons[0] ? `${v.verdict}: ${v.reasons[0]}` : v.verdict;
+  updateSellPreview();
+}
+
 // ---------- Event wiring ----------
 function updateExecuteBtn() {
   document.getElementById("executeBtn").textContent = "Execute " + (currentSide === "BUY" ? "Buy" : "Sell");
@@ -1061,6 +1674,23 @@ function init() {
 
   // journal
   document.getElementById("exportBtn").addEventListener("click", exportCSV);
+
+  // signals
+  document.getElementById("scanBtn").addEventListener("click", runScan);
+  const rankInput = document.getElementById("rankInput");
+  const gapInput = document.getElementById("gapInput");
+  rankInput.value = state.contest.rank;
+  gapInput.value = state.contest.gapPct;
+  rankInput.addEventListener("input", () => { state.contest.rank = rankInput.value; save(); renderSignals(); });
+  gapInput.addEventListener("input", () => { state.contest.gapPct = gapInput.value; save(); renderSignals(); });
+  document.getElementById("verdictWrap").addEventListener("click", e => {
+    const b = e.target.closest("[data-verdict-exec]");
+    if (b) execVerdict(b.dataset.verdictExec);
+  });
+  document.getElementById("buyListWrap").addEventListener("click", e => {
+    const b = e.target.closest("[data-prep-buy]");
+    if (b) prepBuyFromSignal(b.dataset.prepBuy);
+  });
 
   // close modals on backdrop click
   document.querySelectorAll(".modal-bg").forEach(m => m.addEventListener("click", e => { if (e.target === m) m.classList.remove("open"); }));
